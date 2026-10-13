@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VEXIK — 500 tok/s AI Coding CLI</title>
+  <style>
+    :root {
+      --bg: #070709;
+      --panel: #0e0e12;
+      --border: #22222a;
+      --text: #e2e2e8;
+      --muted: #727280;
+      --cyan: #00f0ff;
+      --green: #00ff9d;
+      --magenta: #ff2a85;
+      --yellow: #ffde00;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+      line-height: 1.6;
+      padding: 30px 16px 60px;
+      background-image: radial-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* Верхняя строка статуса */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      margin-right: 6px;
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    /* Заголовок и ASCII логотип */
+    .hero {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .ascii-logo {
+      color: var(--cyan);
+      font-size: 0.72rem;
+      line-height: 1.15;
+      display: inline-block;
+      text-align: left;
+      margin-bottom: 16px;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      margin-top: 12px;
+    }
+
+    .badge {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 4px 10px;
+    }
+
+    .badge.speed { border-color: var(--green); color: var(--green); }
+    .badge.model { border-color: var(--cyan); color: var(--cyan); }
+    .badge.pet { border-color: var(--magenta); color: var(--magenta); }
+
+    /* Блок установки (macOS / Windows) */
+    .install-section {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      margin-bottom: 28px;
+    }
+
+    .os-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .os-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+      border-right: 1px solid var(--border);
+    }
+
+    .os-tab:last-child {
+      border-right: none;
+    }
+
+    .os-tab.active {
+      background: rgba(0, 240, 255, 0.08);
+      color: var(--cyan);
+      font-weight: bold;
+    }
+
+    .install-body {
+      padding: 20px;
+    }
+
+    .step-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cmd-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #040406;
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+
+    .cmd-text {
+      color: var(--green);
+      font-size: 0.95rem;
+      user-select: all;
+    }
+
+    .cmd-text::before {
+      content: "$ ";
+      color: var(--muted);
+      user-select: none;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .copy-btn:hover {
+      background: var(--cyan);
+      color: #000;
+    }
+
+    .os-steps {
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-top: 1px dashed var(--border);
+      padding-top: 12px;
+      margin-top: 8px;
+    }
+
+    .os-steps code {
+      color: var(--text);
+      background: #181820;
+      padding: 2px 6px;
+    }
+
+    /* Живое демо терминала */
+    .terminal-window {
+      border: 1px solid var(--border);
+      background: #050507;
+      margin-bottom: 28px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .term-header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot.r { background: #ff5f56; }
+    .dot.y { background: #ffbd2e; }
+    .dot.g { background: #27c93f; }
+
+    .term-body {
+      padding: 18px;
+      font-size: 0.86rem;
+      min-height: 270px;
+      white-space: pre-wrap;
+    }
+
+    .pet-bar {
+      color: var(--magenta);
+      border: 1px solid rgba(255, 42, 133, 0.35);
+      background: rgba(255, 42, 133, 0.05);
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* Сетка команд и фич */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 16px;
+    }
+
+    .card-title {
+      color: var(--cyan);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .card p {
+      font-size: 0.83rem;
+      color: var(--muted);
+    }
+
+    .commands-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      font-size: 0.85rem;
+    }
+
+    .commands-table th,
+    .commands-table td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    .commands-table th {
+      color: var(--muted);
+      font-weight: normal;
+      background: #0a0a0d;
+    }
+
+    .cmd-name {
+      color: var(--yellow);
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Статус-бар -->
+  <div class="top-bar">
+    <div><span class="status-dot"></span>VEXIK LPU ENGINE: ONLINE</div>
+    <div>v1.0.0 • GPT-OSS 120B</div>
+  </div>
+
+  <!-- Заголовок -->
+  <div class="hero">
+    <pre class="ascii-logo">
+██╗   ██╗███████╗██╗  ██╗██╗██╗  ██╗
+██║   ██║██╔════╝╚██╗██╔╝██║██║ ██╔╝
+██║   ██║█████╗   ╚███╔╝ ██║█████╔╝ 
+╚██╗ ██╔╝██╔══╝   ██╔██╗ ██║██╔═██╗ 
+ ╚████╔╝ ███████╗██╔╝ ██╗██║██║  ██╗
+  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝</pre>
+    <div class="subtitle">Сверхзвуковой ИИ-ассистент для кодинга прямо в твоем терминале</div>
+    <div class="badges">
+      <span class="badge speed">⚡ ~500 ТОКЕНОВ/СЕК</span>
+      <span class="badge model">🧠 GPT-OSS 120B</span>
+      <span class="badge pet">🦊 ПИТОМЕЦ VEXI ВНУТРИ</span>
+    </div>
+  </div>
+
+  <!-- Переключатель установки macOS / Windows -->
+  <div class="install-section">
+    <div class="os-tabs">
+      <button class="os-tab active" id="tab-mac" onclick="switchOS('mac')"> macOS / Linux</button>
+      <button class="os-tab" id="tab-win" onclick="switchOS('win')">❖ Windows (PowerShell / CMD)</button>
+    </div>
+
+    <div class="install-body">
+      <div class="step-label">1. Установите глобально одной командой:</div>
+      <div class="cmd-box">
+        <span class="cmd-text" id="install-cmd">sudo npm i -g vexik-ai</span>
+        <button class="copy-btn" onclick="copyText('install-cmd', this)">КОПИРОВАТЬ</button>
+      </div>
+
+      <div class="step-label">2. Запустите из любой папки одним словом:</div>
+      <div class="cmd-box">
+        <span class="cmd-text" id="run-cmd">vexik</span>
+        <button class="copy-btn" onclick="copyText('run-cmd', this)">КОПИРОВАТЬ</button>
+      </div>
+
+      <div class="os-steps" id="os-hint">
+        <strong>Как открыть на Mac:</strong> нажмите <code>Cmd + Пробел</code>, введите <code>Terminal</code>, вставьте команду установки и введите пароль от Mac. (Требуется установленный <a href="https://nodejs.org" target="_blank" style="color:var(--cyan)">Node.js</a>).
+      </div>
+    </div>
+  </div>
+
+  <!-- Живая демонстрация терминала -->
+  <div class="terminal-window">
+    <div class="term-header">
+      <div class="dots">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+      </div>
+      <div>zsh — vexik (500 tok/s)</div>
+      <div style="color:var(--green)">⚡ 518 tok/s</div>
+    </div>
+    <div class="term-body">
+      <div class="pet-bar">
+        <span>🦊( ◕‿◕ )⚡ <strong>Vexi</strong> [Ур.3 Кибер-Волк | XP: 240/300]</span>
+        <span>🪙 140 ByteCoins | 🍖 Сытость: 95%</span>
+      </div>
+      <div id="demo-stream"></div>
+    </div>
+  </div>
+
+  <!-- Ключевые фичи -->
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">⚡ Скорость ~500 ток/сек</div>
+      <p>Работает на базе модели GPT-OSS 120B. Готовый код и исправления появляются мгновенно, без ожидания.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🦊 Тамагочи-питомец Vexi</div>
+      <p>Живёт прямо в терминале, питается найденными багами, зарабатывает монеты и эволюционирует в Нейро-Дракона.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🛠️ Автономный кодинг</div>
+      <p>Сам создаёт файлы в текущей папке, сканирует проект на ошибки и перехватывает сбои в консоли.</p>
+    </div>
+  </div>
+
+  <!-- Таблица команд -->
+  <table class="commands-table">
+    <thead>
+      <tr>
+        <th>Команда в терминале</th>
+        <th>Что делает</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cmd-name">/code &lt;файл&gt; &lt;задача&gt;</td>
+        <td>Генерирует код на скорости 500 т/с и автоматически сохраняет готовый файл</td>
+      </tr>
+      <tr>
+        <td class="cmd-name">/fix &lt;файл&gt;</td>
+        <td>Находит баги и уязвимости в вашем файле и перезаписывает исправленную версию</td>
+      </tr>
+      <tr>
+        <td class="cmd-name">/run &lt;команда&gt;</td>
+        <td>Запускает скрипт в терминале и мгновенно объясняет ошибку, если код упал</td>
+      </tr>
+      <tr>
+        <td class="cmd-name">/pet</td>
+        <td>Открывает комнату питомца Vexi (кормление багами, турбо-кофе, мини-игра)</td>
+      </tr>
+      <tr>
+        <td class="cmd-name">/speed</td>
+        <td>Запускает живой стресс-тест скорости генерации 500 токенов в секунду</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <footer>
+    VEXIK CLI • Построено для терминалов macOS, Windows и Linux
+  </footer>
+</div>
+
+<script>
+  // Переключение инструкций между Mac и Windows
+  function switchOS(os) {
+    const tabMac = document.getElementById('tab-mac');
+    const tabWin = document.getElementById('tab-win');
+    const installCmd = document.getElementById('install-cmd');
+    const osHint = document.getElementById('os-hint');
+
+    if (os === 'mac') {
+      tabMac.classList.add('active');
+      tabWin.classList.remove('active');
+      installCmd.textContent = 'sudo npm i -g vexik-ai';
+      osHint.innerHTML = '<strong>Как открыть на Mac:</strong> нажмите <code>Cmd + Пробел</code>, введите <code>Terminal</code>, вставьте команду установки и введите пароль от Mac. (Требуется установленный <a href="https://nodejs.org" target="_blank" style="color:var(--cyan)">Node.js</a>).';
+    } else {
+      tabWin.classList.add('active');
+      tabMac.classList.remove('active');
+      installCmd.textContent = 'npm i -g vexik-ai';
+      osHint.innerHTML = '<strong>Как открыть на Windows:</strong> нажмите <code>Win + R</code>, введите <code>powershell</code> или <code>cmd</code>, вставьте команду установки и нажмите Enter. (Требуется установленный <a href="https://nodejs.org" target="_blank" style="color:var(--cyan)">Node.js</a>).';
+    }
+  }
+
+  // Копирование команды в буфер обмена
+  function copyText(elementId, btn) {
+    const text = document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const old = btn.textContent;
+      btn.textContent = 'СКОПИРОВАНО ✓';
+      btn.style.background = 'var(--green)';
+      btn.style.borderColor = 'var(--green)';
+      btn.style.color = '#000';
+      setTimeout(() => {
+        btn.textContent = old;
+        btn.style.background = 'transparent';
+        btn.style.borderColor = 'var(--cyan)';
+        btn.style.color = 'var(--cyan)';
+      }, 1500);
+    });
+  }
+
+  // Симуляция гиперскоростного ответа 500 т/с в демо-окне
+  const demoEl = document.getElementById('demo-stream');
+  const demoLines = [
+    '\x1b[36mvexik >\x1b[0m /code server.js создай быстрый веб-сервер',
+    '⚡ Генерация файла server.js на скорости 500 т/с...\n',
+    'const http = require("http");',
+    'const server = http.createServer((req, res) => {',
+    '  res.writeHead(200, { "Content-Type": "application/json" });',
+    '  res.end(JSON.stringify({ status: "VEXIK 500 TOK/S ONLINE" }));',
+    '});',
+    'server.listen(3000, () => console.log("🚀 Запущено на :3000"));\n',
+    '✔ Файл создан: ./server.js (+40 XP, +20 🪙)',
+    '⚡ Скорость: 524 ток/сек | Время: 0.14с | Модель: openai/gpt-oss-120b',
+    '🐾 Vexi: «Вжух! 524 ток/сек — я даже моргнуть не успел!»'
+  ].join('\n').replace(/\x1b\[[0-9;]*m/g, '');
+
+  let idx = 0;
+  function streamDemo() {
+    if (idx <= demoLines.length) {
+      demoEl.textContent = demoLines.slice(0, idx) + '█';
+      idx += 6; // Высокая скорость печати (эффект 500 т/с)
+      setTimeout(streamDemo, 18);
+    } else {
+      demoEl.textContent = demoLines;
+      setTimeout(() => { idx = 0; streamDemo(); }, 4500);
+    }
+  }
+  streamDemo();
+</script>
+
+</body>
+</html>
